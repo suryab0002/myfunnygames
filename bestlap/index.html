@@ -1,1 +1,319 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Best Lap Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Press Start 2P', monospace;
+      text-align: center;
+      user-select: none;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 20px;
+      padding-top: 20px;
+      position: relative;
+      min-height: 100vh;
+    }
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      border: 2px solid black;
+      background: white;
+      cursor: crosshair;
+    }
+    #info {
+      margin-top: 15px;
+      font-size: 12px;
+      min-height: 30px;
+      width: 600px;
+    }
+    #leaderboard {
+      font-size: 12px;
+      width: 180px;
+      text-align: left;
+      border: 2px solid black;
+      background: white;
+      padding: 10px;
+      height: 90px;
+      overflow-y: auto;
+    }
+    h1, h2 {
+      margin: 0 0 5px 0;
+    }
+    p {
+      font-size: 10px;
+      max-width: 500px;
+      margin: 0 auto 15px auto;
+      line-height: 1.5;
+    }
+    #leaderboard h2 {
+      border-bottom: 1px solid black;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    #buttons {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    button {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      padding: 6px 12px;
+      cursor: pointer;
+      border: 1px solid black;
+      background: white;
+      transition: background 0.2s ease;
+    }
+    button:hover {
+      background: #ddd;
+    }
+    footer {
+      position: fixed;
+      bottom: 5px;
+      left: 5px;
+      font-size: 10px;
+      color: #555;
+      user-select: none;
+      pointer-events: none;
+      font-family: 'Press Start 2P', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <h2>🏁 BEST LAP</h2>
+   <p>CLICK & HOLD ANYWHERE INSIDE GREY LOOP<br><br>MOVE CLOCKWISE & RETURN TO THE BLACK LINE</p>
+    <canvas id="game" width="600" height="400"></canvas>
+    <div id="info"></div>
+  </div>
+  <div id="sidebar-container" style="display: flex; flex-direction: column; align-items: center;"> <br> <br> <br> <br> <br> <br> <br> <br> <br> <br> 
+  <div id="leaderboard">
+     <h2>My Best Laps</h2>
+     <div id="timesList">No laps yet</div>
+     </div>
+  <div id="buttons">
+      <button id="resetBtn">Reset</button>
+      <button id="averageBtn">Average</button>
+      </div>
+      </div>
+    <footer>
+    © 2025 suryab0002. All rights reserved.
+  </footer>
 
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const info = document.getElementById("info");
+  const timesList = document.getElementById("timesList");
+  const resetBtn = document.getElementById("resetBtn");
+  const averageBtn = document.getElementById("averageBtn");
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const radius = 120;
+  const thickness = 30;
+  const innerRadius = radius - thickness / 2;
+  const outerRadius = radius + thickness / 2;
+
+  let isRunning = false;
+  let mouseHeld = false;
+  let startAngle = null;
+  let lastAngle = null;
+  let startTime = null;
+  let elapsedTime = 0;
+  let animationId = null;
+  let crossedAngleThreshold = false;
+
+  function pointToAngle(x, y) {
+    let angle = Math.atan2(y - cy, x - cx) * 180 / Math.PI;
+    if (angle < 0) angle += 360;
+    return angle;
+  }
+
+  function isOnTrack(x, y) {
+    const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+    return dist >= innerRadius && dist <= outerRadius;
+  }
+
+  function drawTrack() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
+    ctx.arc(cx, cy, innerRadius, Math.PI * 2, 0, true);
+    ctx.fillStyle = "#ccc";
+    ctx.fill();
+
+    if (startAngle !== null) {
+      const rad = startAngle * Math.PI / 180;
+      const x1 = cx + innerRadius * Math.cos(rad);
+      const y1 = cy + innerRadius * Math.sin(rad);
+      const x2 = cx + outerRadius * Math.cos(rad);
+      const y2 = cy + outerRadius * Math.sin(rad);
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    }
+  }
+
+  function resetGame(message = "") {
+    isRunning = false;
+    mouseHeld = false;
+    startAngle = null;
+    lastAngle = null;
+    startTime = null;
+    elapsedTime = 0;
+    crossedAngleThreshold = false;
+    cancelAnimationFrame(animationId);
+    drawTrack();
+    info.innerHTML = message ? `<span style="color:red">${message}</span>` : "";
+  }
+
+  function updateTimer() {
+    if (isRunning) {
+      elapsedTime = (performance.now() - startTime) / 1000;
+      info.textContent = `⏱ TIME: ${elapsedTime.toFixed(2)}s`;
+      animationId = requestAnimationFrame(updateTimer);
+    }
+  }
+
+  function distance(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  }
+
+  function isOnFinishLine(x, y) {
+    if (startAngle === null) return false;
+    const rad = startAngle * Math.PI / 180;
+    const fx1 = cx + innerRadius * Math.cos(rad);
+    const fy1 = cy + innerRadius * Math.sin(rad);
+    const fx2 = cx + outerRadius * Math.cos(rad);
+    const fy2 = cy + outerRadius * Math.sin(rad);
+    const d1 = distance(x, y, fx1, fy1);
+    const d2 = distance(x, y, fx2, fy2);
+    const lineLength = distance(fx1, fy1, fx2, fy2);
+    return Math.abs(d1 + d2 - lineLength) < 5;
+  }
+
+  function saveLapTime(time) {
+    let times = JSON.parse(localStorage.getItem("bestlap_personal_times")) || [];
+    times.push(time);
+    times.sort((a, b) => a - b);
+    if (times.length > 5) times = times.slice(0, 5); // keep top 5 only
+    localStorage.setItem("bestlap_personal_times", JSON.stringify(times));
+    return times;
+  }
+
+  function updateLeaderboard() {
+    const times = JSON.parse(localStorage.getItem("bestlap_personal_times")) || [];
+    if (times.length === 0) {
+      timesList.innerHTML = "No laps yet";
+      return;
+    }
+    timesList.innerHTML = times
+      .map((t, i) => `${i + 1}. ${t.toFixed(2)}s`)
+      .join("<br>");
+  }
+
+  resetBtn.addEventListener("click", () => {
+    localStorage.removeItem("bestlap_personal_times");
+    updateLeaderboard();
+    info.innerHTML = "Leaderboard reset!";
+  });
+
+  averageBtn.addEventListener("click", () => {
+    const times = JSON.parse(localStorage.getItem("bestlap_personal_times")) || [];
+    if (times.length === 0) {
+      info.innerHTML = "<span style='color:red'>No laps yet to calculate average.</span>";
+      return;
+    }
+    const avg = times.reduce((a, b) => a + b, 0) / times.length;
+    info.innerHTML = `🏁 Average lap time: ${avg.toFixed(2)}s`;
+  });
+
+  canvas.addEventListener("mousedown", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (!isOnTrack(mx, my)) {
+      resetGame("❌ CLICK ON THE IOOP TO START");
+      return;
+    }
+
+    mouseHeld = true;
+    isRunning = true;
+    startAngle = pointToAngle(mx, my);
+    lastAngle = startAngle;
+    startTime = performance.now();
+    crossedAngleThreshold = false;
+
+    drawTrack();
+    updateTimer();
+  });
+
+  canvas.addEventListener("mouseup", () => {
+    if (isRunning && mouseHeld) {
+      resetGame("❌ YOU LET GO");
+    }
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    if (!isRunning || !mouseHeld) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (!isOnTrack(mx, my)) {
+      resetGame("❌ YOU LEFT THE TRACK");
+      return;
+    }
+
+    const currentAngle = pointToAngle(mx, my);
+    let diff = currentAngle - lastAngle;
+    if (diff < 0) diff += 360;
+
+    if (diff > 180) {
+      resetGame("⛔ WRONG DIRECTION");
+      return;
+    }
+
+    const angleFromStart = currentAngle - startAngle;
+    const traveled = angleFromStart < 0 ? angleFromStart + 360 : angleFromStart;
+    if (traveled > 30) crossedAngleThreshold = true;
+
+    if (crossedAngleThreshold && isOnFinishLine(mx, my)) {
+      const total = (performance.now() - startTime) / 1000;
+      resetGame(`✅ LAP COMPLETE! TIME: ${total.toFixed(2)}s`);
+      saveLapTime(total);
+      updateLeaderboard();
+      return;
+    }
+
+    lastAngle = currentAngle;
+  });
+
+  drawTrack();
+  updateLeaderboard();
+})();
+</script>
+
+</body>
+</html>
