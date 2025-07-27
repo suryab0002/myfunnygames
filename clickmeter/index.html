@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click Meter</title>
+    <style>
+        body {
+            background-color: #e0f7e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Press Start 2P', cursive;
+            color: #1a3c1a;
+        }
+        h1 {
+            color: #1a3c1a;
+            font-size: 2em;
+            margin-bottom: 20px;
+            position: absolute;
+            top: 20%;
+        }
+        #buttonContainer {
+            position: absolute;
+            top: 40%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #clickButton {  
+            background-color: #ff0000;
+            color: white;
+            border: 4px solid #cc0000;
+            padding: 20px 40px;
+            font-size: 1.5em;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            box-shadow: 5px 5px 0px #000;
+            position: absolute;
+        }
+        #clickButton:hover {
+            background-color: #e60000;
+        }
+        #clickButton:active {
+            box-shadow: none;
+            transform: translate(5px, 5px);
+        }
+        #resetButton {
+            background-color: #4CAF50;
+            color: white;
+            border: 4px solid #3d8b40;
+            padding: 10px 20px;
+            font-size: 1em;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px #000;
+            position: absolute;
+            top: 100px;
+            display: none;
+        }
+        #resetButton:hover {
+            background-color: #45a049;
+        }
+        #resetButton:active {
+            box-shadow: none;
+            transform: translate(3px, 3px);
+        }
+        #info {
+            position: absolute;
+            top: 65%;
+            font-size: 1em;
+            text-align: center;
+        }
+        footer {
+            position: fixed;
+            bottom: 10px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #1a3c1a;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5em;
+                top: 15%;
+            }
+            #buttonContainer {
+                top: 35%;
+            }
+            #clickButton {
+                padding: 15px 30px;
+                font-size: 1.2em;
+            }
+            #resetButton {
+                padding: 8px 16px;
+                font-size: 0.8em;
+                top: 80px;
+            }
+            #info {
+                top: 55%;
+                font-size: 0.8em;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1>Click Meter</h1>
+    <div id="buttonContainer">
+        <button id="clickButton">Click</button>
+        <button id="resetButton">Reset</button>
+    </div>
+    <div id="info">
+        <p>Clicks: <span id="clickCount">0</span></p>
+        <p>Time: <span id="timer">30</span>s</p>
+        <p id="result" style="display: none;">Clicks per Minute: <span id="cpm">0</span></p>
+    </div>
+    <footer>© 2025 suryab0002. All rights reserved.</footer>
+    <script>
+        let clicks = 0;
+        let timeLeft = 30;
+        let timerRunning = false;
+        let timerId;
 
+        const clickButton = document.getElementById('clickButton');
+        const resetButton = document.getElementById('resetButton');
+        const clickCount = document.getElementById('clickCount');
+        const timerDisplay = document.getElementById('timer');
+        const result = document.getElementById('result');
+        const cpm = document.getElementById('cpm');
+
+        clickButton.addEventListener('click', () => {
+            clicks++;
+            clickCount.textContent = clicks;
+
+            if (!timerRunning) {
+                timerRunning = true;
+                resetButton.style.display = 'block';
+                startTimer();
+            }
+        });
+
+        resetButton.addEventListener('click', resetGame);
+
+        function startTimer() {
+            clickButton.disabled = false;
+            timerId = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    clickButton.style.display = 'none'; // Hide click button when timer ends
+                    result.style.display = 'block';
+                    cpm.textContent = clicks * 2; // Double the clicks for CPM
+                }
+            }, 1000);
+        }
+
+        function resetGame() {
+            clicks = 0;
+            timeLeft = 30;
+            timerRunning = false;
+            clearInterval(timerId);
+            clickCount.textContent = clicks;
+            timerDisplay.textContent = timeLeft;
+            result.style.display = 'none';
+            cpm.textContent = '0';
+            resetButton.style.display = 'none';
+            clickButton.style.display = 'block'; // Show click button again
+            clickButton.disabled = false;
+        }
+    </script>
+</body>
+</html>
