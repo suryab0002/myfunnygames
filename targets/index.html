@@ -1,41 +1,678 @@
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Coming Soon</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Press Start 2P', monospace;
-      background: #f9f9f9;
-      color: #555;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      text-align: center;
-      font-size: 16px;
-      flex-direction: column;
-      position: relative;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Targets Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Apply a global font and background */
+        body {
+            font-family: 'Press Start 2P', cursive; /* Pixelated font */
+            background-color: #e0f2f7; /* Light blue background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh; /* Ensure full viewport height */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            overflow: hidden; /* Prevent body scroll */
+        }
 
-    p {
-      margin: 20px;
-    }
+        /* Main content wrapper for game and leaderboard */
+        .main-content-wrapper {
+            display: flex;
+            flex-direction: row; /* Default to row for larger screens */
+            gap: 20px; /* Space between game and leaderboard */
+            max-width: 1000px; /* Max width for the entire game area */
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top */
+            margin-bottom: 20px;
+        }
 
-    footer {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      font-size: 8px;
-      color: #555;
-    }
-  </style>
+        /* Game container styling */
+        .game-container {
+            background-color: #ffffff; /* White background for the game area */
+            border-radius: 15px; /* Rounded corners */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Soft shadow */
+            padding: 25px;
+            text-align: center;
+            flex-shrink: 0; /* Prevent shrinking */
+            width: 600px; /* Base width */
+            position: relative; /* Needed for absolute positioning of countdown */
+        }
+
+        h1 {
+            color: #263238; /* Darker text for heading */
+            margin-bottom: 20px;
+            font-size: 1.4em; /* Adjusted for pixel font - further reduced */
+        }
+
+        /* Game information container (score and timer) */
+        .game-info {
+            display: flex;
+            justify-content: space-between; /* Space out score and timer */
+            width: 100%;
+            margin-bottom: 20px;
+            padding: 0 10px; /* Add some padding */
+            box-sizing: border-box;
+        }
+
+        /* Score and Timer display styling */
+        #score-display, #timer-display {
+            font-size: 1em; /* Adjusted for pixel font - further reduced */
+            color: #00796b; /* Teal color for score */
+            font-weight: bold;
+            flex-grow: 1; /* Allow them to grow and take space */
+            text-align: center; /* Center text within their flex item */
+        }
+
+        #timer-display {
+            color: #d32f2f; /* Red color for timer */
+        }
+
+        /* Canvas styling */
+        canvas {
+            background-color: #f0f8ff; /* Light sky blue for canvas background */
+            border: 2px solid #64b5f6; /* Blue border */
+            border-radius: 10px; /* Rounded corners for canvas */
+            display: block; /* Remove extra space below canvas */
+            margin: 0 auto 25px auto; /* Center canvas and add bottom margin */
+            touch-action: manipulation; /* Improve touch responsiveness */
+            max-width: 100%; /* Ensure canvas scales down on smaller screens */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        /* Button styling */
+        .game-button {
+            background: linear-gradient(145deg, #4CAF50, #388E3C); /* Green gradient */
+            color: white;
+            border: none;
+            border-radius: 25px; /* More rounded */
+            padding: 10px 20px; /* Slightly smaller padding */
+            font-size: 0.8em; /* Adjusted for pixel font - slightly smaller */
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transitions */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Button shadow */
+            margin: 10px; /* Spacing between buttons */
+            outline: none; /* Remove outline on focus */
+        }
+
+        .game-button:hover {
+            background: linear-gradient(145deg, #388E3C, #4CAF50); /* Darker green on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-button:active {
+            transform: translateY(0); /* Press effect */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Styling for the Reset button specifically */
+        #resetButton {
+            background: linear-gradient(145deg, #FF5722, #E64A19); /* Orange/Red gradient */
+        }
+
+        #resetButton:hover {
+            background: linear-gradient(145deg, #E64A19, #FF5722);
+        }
+
+        /* Styling for the Reset Leaderboard button */
+        #resetLeaderboardButton {
+            background: linear-gradient(145deg, #607D8B, #455A64); /* Blue-grey gradient */
+        }
+
+        #resetLeaderboardButton:hover {
+            background: linear-gradient(145deg, #455A64, #607D8B);
+        }
+
+        /* Message box styling */
+        .message-box {
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent dark background */
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            position: absolute; /* Position over the game */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 80%; /* Responsive width */
+            max-width: 400px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .message-box p {
+            margin: 0 0 15px 0;
+            font-size: 0.9em; /* Adjusted for pixel font - slightly smaller */
+        }
+
+        .message-box .game-button {
+            margin-top: 15px;
+        }
+
+        /* Countdown overlay styling */
+        #countdown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Dark overlay */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 90; /* Below message box, above canvas */
+            color: white;
+            font-size: 5em; /* Large countdown numbers */
+            font-weight: bold;
+            display: none; /* Hidden by default */
+            border-radius: 15px; /* Match container border-radius */
+        }
+
+        /* Leaderboard styling */
+        .leaderboard-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            padding: 25px;
+            text-align: center;
+            width: 300px; /* Fixed width for leaderboard */
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        .leaderboard-container h2 {
+            color: #263238;
+            font-size: 1.2em; /* Slightly smaller than main title */
+            margin-bottom: 15px;
+        }
+
+        #leaderboard-list {
+            list-style: none; /* Remove bullet points */
+            padding: 0;
+            margin: 0;
+        }
+
+        #leaderboard-list li {
+            background-color: #f0f8ff; /* Light background for list items */
+            border: 1px solid #c8e6c9; /* Light green border */
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        #leaderboard-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        #leaderboard-list li span:first-child {
+            font-weight: bold;
+            color: #00796b; /* Teal for rank/score */
+        }
+
+        /* Footer for copyright */
+        footer {
+            margin-top: 30px;
+            color: #546E7A; /* Greyish color */
+            font-size: 0.7em; /* Smaller font for copyright */
+            text-align: center;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1000px) {
+            .main-content-wrapper {
+                flex-direction: column; /* Stack vertically on smaller screens */
+                align-items: center; /* Center items when stacked */
+            }
+            .game-container, .leaderboard-container {
+                width: 90%; /* Allow them to take more width when stacked */
+                max-width: 600px; /* Keep max width */
+            }
+            .leaderboard-container {
+                margin-top: 20px; /* Add space when stacked */
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.2em;
+            }
+            #score-display, #timer-display {
+                font-size: 0.9em;
+            }
+            .game-button {
+                padding: 8px 15px;
+                font-size: 0.7em;
+            }
+            .game-container, .leaderboard-container {
+                padding: 15px;
+            }
+            #countdown-overlay {
+                font-size: 4em;
+            }
+            .leaderboard-container h2 {
+                font-size: 1.1em;
+            }
+            #leaderboard-list li {
+                font-size: 0.8em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 0.9em;
+            }
+            #score-display, #timer-display {
+                font-size: 0.8em;
+            }
+            .game-button {
+                padding: 6px 12px;
+                font-size: 0.6em;
+            }
+            .game-container, .leaderboard-container {
+                padding: 10px;
+            }
+            #countdown-overlay {
+                font-size: 3em;
+            }
+            .leaderboard-container h2 {
+                font-size: 1em;
+            }
+            #leaderboard-list li {
+                font-size: 0.7em;
+            }
+        }
+    </style>
 </head>
 <body>
-  <p>🕹️</p>
-  <p>COMING SOON</p>
+    <div class="main-content-wrapper">
+        <div class="game-container">
+            <h1>🎯 Targets! 🎯</h1>
+            <div class="game-info">
+                <div id="score-display">Score: 0</div>
+                <div id="timer-display">Time: 30s</div>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="countdown-overlay"></div> <!-- Countdown Overlay -->
+            <div>
+                <button id="startButton" class="game-button">Start</button>
+                <button id="resetButton" class="game-button">Reset</button>
+            </div>
+        </div>
 
-  <footer>© 2025 suryab0002. All rights reserved.</footer>
+        <div class="leaderboard-container">
+            <h2>🏆 My Top 3 🏆</h2>
+            <ul id="leaderboard-list">
+                <!-- Leaderboard items will be inserted here by JavaScript -->
+            </ul>
+            <button id="resetLeaderboardButton" class="game-button">Reset Leaderboard</button> <!-- New Reset Leaderboard Button -->
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box">
+        <p id="messageText"></p>
+        <button id="messageButton" class="game-button">OK</button>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 suryab0002. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Get canvas and context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get score display, timer display, and buttons
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const messageButton = document.getElementById('messageButton');
+        const countdownOverlay = document.getElementById('countdown-overlay');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const resetLeaderboardButton = document.getElementById('resetLeaderboardButton'); // New: Get reset leaderboard button
+
+        // Game variables
+        let score = 0;
+        let targets = [];
+        const targetRadius = 25;
+        const maxTargets = 5;
+        const targetSpawnInterval = 1000;
+        const gameDuration = 30000;
+        let gameTimer;
+        let spawnTimer;
+        let gameActive = false;
+        let animationFrameId;
+
+        let firstClickMade = false;
+        let startTime = 0;
+        let countdownValue = 3;
+        let countdownIntervalId;
+
+        const LEADERBOARD_KEY = 'targetsGamePersonalLeaderboard'; // Key for localStorage
+
+        // Function to set canvas dimensions based on container width
+        function setCanvasDimensions() {
+            const containerWidth = canvas.parentElement.clientWidth;
+            // Adjust canvas width to fit within the game container
+            canvas.width = Math.min(containerWidth - 50, 500);
+            canvas.height = Math.min(canvas.width * 0.75, 400);
+        }
+
+        // Call once on load and on window resize
+        window.addEventListener('load', setCanvasDimensions);
+        window.addEventListener('resize', setCanvasDimensions);
+
+        // Function to create a new target
+        function createTarget() {
+            // Ensure target is fully within canvas bounds
+            const x = Math.random() * (canvas.width - targetRadius * 2) + targetRadius;
+            const y = Math.random() * (canvas.height - targetRadius * 2) + targetRadius;
+            // Targets no longer need a color property as they are drawn with fixed colors
+            targets.push({ x, y });
+        }
+
+        // Function to draw all targets with red and white stripes
+        function drawTargets() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+            targets.forEach(target => {
+                // Draw the target as concentric red and white circles
+                // Outermost white circle
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, targetRadius, 0, Math.PI * 2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.closePath();
+
+                // Middle red circle
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, targetRadius * 0.66, 0, Math.PI * 2);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+                ctx.closePath();
+
+                // Innermost white circle (bullseye)
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, targetRadius * 0.33, 0, Math.PI * 2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                ctx.closePath();
+
+                // Add a black border to the entire target
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, targetRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = '#333'; // Darker border for targets
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+            });
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (!gameActive) return;
+            drawTargets();
+            if (firstClickMade) {
+                updateTimerDisplay();
+            }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // Function to update the countdown timer display
+        function updateTimerDisplay() {
+            if (!gameActive || !firstClickMade) return;
+
+            const elapsedTime = Date.now() - startTime;
+            const timeRemaining = Math.max(0, gameDuration - elapsedTime);
+            const seconds = Math.ceil(timeRemaining / 1000);
+            timerDisplay.textContent = `Time: ${seconds}s`;
+        }
+
+        // Function to handle target clicks
+        function handleClick(event) {
+            if (!gameActive) return;
+
+            let clientX, clientY;
+            if (event.touches && event.touches.length > 0) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            } else {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const mouseX = (clientX - rect.left) * scaleX;
+            const mouseY = (clientY - rect.top) * scaleY;
+
+            for (let i = targets.length - 1; i >= 0; i--) {
+                const target = targets[i];
+                const distance = Math.sqrt(
+                    (mouseX - target.x) ** 2 + (mouseY - target.y) ** 2
+                );
+
+                if (distance < targetRadius) {
+                    if (!firstClickMade) {
+                        firstClickMade = true;
+                        startTime = Date.now();
+                        gameTimer = setTimeout(() => {
+                            endGame();
+                        }, gameDuration);
+                    }
+
+                    score++;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    targets.splice(i, 1);
+                    if (targets.length < maxTargets) {
+                        createTarget();
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Function to show a message box
+        function showMessageBox(message, buttonText, onButtonClick) {
+            messageText.textContent = message;
+            messageButton.textContent = buttonText;
+            messageBox.style.display = 'flex';
+            messageButton.onclick = () => {
+                messageBox.style.display = 'none';
+                if (onButtonClick) {
+                    onButtonClick();
+                }
+            };
+        }
+
+        // Function to start the actual game after countdown
+        function startActualGame() {
+            gameActive = true;
+            startButton.disabled = true;
+            resetButton.disabled = false;
+            resetLeaderboardButton.disabled = false; // Enable reset leaderboard button
+
+            // Populate initial targets
+            for (let i = 0; i < maxTargets; i++) {
+                createTarget();
+            }
+
+            // Start spawning new targets periodically
+            spawnTimer = setInterval(() => {
+                if (targets.length < maxTargets) {
+                    createTarget();
+                }
+            }, targetSpawnInterval);
+
+            gameLoop(); // Start the animation loop
+        }
+
+        // Function to handle the countdown before game starts
+        function startCountdown() {
+            score = 0;
+            targets = [];
+            scoreDisplay.textContent = `Score: ${score}`;
+            timerDisplay.textContent = `Time: ${gameDuration / 1000}s`;
+            firstClickMade = false;
+            startTime = 0;
+
+            clearInterval(spawnTimer);
+            clearTimeout(gameTimer);
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(countdownIntervalId); // Clear any previous countdown
+
+            startButton.disabled = true; // Disable start button during countdown
+            resetButton.disabled = true; // Disable reset button during countdown
+            resetLeaderboardButton.disabled = true; // Disable reset leaderboard button during countdown
+            canvas.removeEventListener('mousedown', handleClick); // Disable clicks during countdown
+            canvas.removeEventListener('touchstart', handleClick);
+
+            countdownValue = 3;
+            countdownOverlay.style.display = 'flex';
+            countdownOverlay.textContent = countdownValue;
+
+            countdownIntervalId = setInterval(() => {
+                countdownValue--;
+                if (countdownValue > 0) {
+                    countdownOverlay.textContent = countdownValue;
+                } else if (countdownValue === 0) {
+                    countdownOverlay.textContent = 'GO!';
+                } else {
+                    clearInterval(countdownIntervalId);
+                    countdownOverlay.style.display = 'none';
+                    startButton.disabled = false; // Re-enable start button
+                    resetButton.disabled = false; // Re-enable reset button
+                    resetLeaderboardButton.disabled = false; // Re-enable reset leaderboard button
+                    canvas.addEventListener('mousedown', handleClick); // Re-enable clicks
+                    canvas.addEventListener('touchstart', handleClick, { passive: true });
+                    startActualGame(); // Start the game after countdown
+                }
+            }, 1000);
+        }
+
+
+        // Function to end the game
+        function endGame() {
+            gameActive = false;
+            startButton.disabled = false;
+            resetButton.disabled = false;
+            resetLeaderboardButton.disabled = false; // Enable reset leaderboard button
+            clearInterval(spawnTimer);
+            clearTimeout(gameTimer);
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(countdownIntervalId); // Ensure countdown is cleared
+            timerDisplay.textContent = `Time: 0s`;
+            saveScore(score); // Save the score when the game ends
+            showMessageBox(`Game Over! Your final score is: ${score}`, 'Play Again!', startCountdown);
+        }
+
+        // Function to reset the game state
+        function resetGame() {
+            gameActive = false;
+            startButton.disabled = false;
+            resetButton.disabled = false;
+            resetLeaderboardButton.disabled = false; // Enable reset leaderboard button
+            clearInterval(spawnTimer);
+            clearTimeout(gameTimer);
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(countdownIntervalId); // Ensure countdown is cleared
+
+            score = 0;
+            targets = [];
+            scoreDisplay.textContent = `Score: ${score}`;
+            timerDisplay.textContent = `Time: ${gameDuration / 1000}s`;
+            firstClickMade = false;
+            startTime = 0;
+            drawTargets(); // Clear canvas and redraw empty state
+            countdownOverlay.style.display = 'none'; // Hide countdown overlay
+            canvas.removeEventListener('mousedown', handleClick); // Disable clicks
+            canvas.removeEventListener('touchstart', handleClick);
+            showMessageBox('Game has been reset. Click "Start" to begin.', 'OK', () => {
+                // After OK, re-enable click listeners for the next game
+                canvas.addEventListener('mousedown', handleClick);
+                canvas.addEventListener('touchstart', handleClick, { passive: true });
+            });
+            displayLeaderboard(); // Update leaderboard on reset
+        }
+
+        // Leaderboard Functions (using localStorage)
+        function loadLeaderboard() {
+            const storedScores = localStorage.getItem(LEADERBOARD_KEY);
+            return storedScores ? JSON.parse(storedScores) : [];
+        }
+
+        function saveScore(newScore) {
+            let scores = loadLeaderboard();
+            scores.push(newScore);
+            scores.sort((a, b) => b - a); // Sort in descending order
+            scores = scores.slice(0, 3); // Keep only the top 3
+            localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(scores));
+            displayLeaderboard(); // Update the displayed leaderboard
+        }
+
+        function displayLeaderboard() {
+            const scores = loadLeaderboard();
+            leaderboardList.innerHTML = ''; // Clear current list
+
+            if (scores.length === 0) {
+                const listItem = document.createElement('li');
+                listItem.textContent = 'No scores yet!';
+                leaderboardList.appendChild(listItem);
+            } else {
+                scores.forEach((score, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<span>${index + 1}.</span> <span>${score}</span>`;
+                    leaderboardList.appendChild(listItem);
+                });
+            }
+        }
+
+        // New: Function to reset the personal leaderboard
+        function resetPersonalLeaderboard() {
+            localStorage.removeItem(LEADERBOARD_KEY); // Clear all scores from localStorage
+            displayLeaderboard(); // Refresh the displayed leaderboard
+            showMessageBox('Personal leaderboard has been cleared!', 'OK', null);
+        }
+
+        // Event listeners
+        startButton.addEventListener('click', startCountdown);
+        resetButton.addEventListener('click', resetGame);
+        resetLeaderboardButton.addEventListener('click', resetPersonalLeaderboard); // New: Event listener for reset leaderboard button
+
+        // Initial setup
+        setCanvasDimensions();
+        drawTargets();
+        displayLeaderboard(); // Load and display leaderboard on initial load
+        showMessageBox('Welcome to Targets! Click "Start" to begin.', 'Got It!', () => {
+             // After dismissing initial message, enable click listeners
+             canvas.addEventListener('mousedown', handleClick);
+             canvas.addEventListener('touchstart', handleClick, { passive: true });
+        });
+        resetButton.disabled = false; // Ensure reset button is enabled initially
+        resetLeaderboardButton.disabled = false; // Ensure reset leaderboard button is enabled initially
+
+        window.onload = function() {
+            // No need to call startGame here, as the message box handles the initial state
+            // and the user clicks the button to start.
+        };
+    </script>
 </body>
 </html>
