@@ -1,1 +1,302 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stop It</title>
+    <!-- Google Fonts for pixelated retro font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Basic body styling for full-page layout and background */
+        body {
+            font-family: 'Press Start 2P', cursive; /* Apply the pixelated font */
+            background-color: #FCF5ED; /* Very light beige background */
+            color: #333; /* Dark grey text for contrast on light background */
+            display: flex; /* Use flexbox for layout */
+            flex-direction: column; /* Stack elements vertically */
+            justify-content: center; /* Center content vertically */
+            align-items: center; /* Center content horizontally */
+            min-height: 100vh; /* Ensure body takes at least full viewport height */
+            margin: 0; /* Remove default body margin */
+            padding: 20px; /* Add some padding around the content */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            text-align: center; /* Center text within the body */
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+        }
+
+        /* Styling for the main title, now outside the container */
+        .game-title {
+            color: #333333; /* Darker grey color for the title */
+            font-size: 2.8em; /* Medium sized font, slightly larger to stand out */
+            margin-bottom: 5px; /* Reduced space below the title to fit message */
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Text shadow for depth */
+        }
+
+        /* Styling for the instruction message */
+        .instruction-message {
+            color: #666; /* Slightly darker grey for instruction */
+            font-size: 1.1em; /* Smaller font for instruction */
+            margin-bottom: 25px; /* Space below instruction and above game container */
+        }
+
+        /* Container for the game elements */
+        .game-container {
+            background-color: #ffffff; /* White background for the game area */
+            border: 5px solid #333333; /* Darker grey border to define the game area */
+            border-radius: 10px; /* Rounded corners for a softer look */
+            padding: 30px; /* Internal padding */
+            /* Subtle shadow for a clean look on light background */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            display: flex; /* Flexbox for internal elements */
+            flex-direction: column; /* Stack internal elements vertically */
+            align-items: center; /* Center internal elements horizontally */
+            gap: 25px; /* Space between internal elements */
+            max-width: 90%; /* Ensure responsiveness on smaller screens */
+            width: 600px; /* Fixed width for medium size on larger screens */
+            box-sizing: border-box;
+        }
+
+        /* Styling for the timer display */
+        .timer-display {
+            font-size: 3.5em; /* Larger font size for prominence */
+            color: #333333; /* Darker grey color for the timer */
+            min-width: 280px; /* Ensure enough space for the timer text */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Text shadow for depth */
+        }
+
+        /* Styling for the message display */
+        .message-display {
+            font-size: 1.8em; /* Medium font size for messages */
+            color: #007700; /* Green for success, overridden by JS for others */
+            min-height: 2em; /* Reserve vertical space to prevent layout shifts */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Text shadow for depth */
+        }
+
+        /* Styling for the game button */
+        .game-button {
+            font-family: 'Press Start 2P', cursive; /* Apply pixelated font */
+            background-color: #333333; /* Darker grey button color */
+            color: #ffffff; /* White text color */
+            border: 3px solid #222222; /* Darker shade of dark grey for border */
+            padding: 15px 30px; /* Padding inside buttons */
+            font-size: 1.2em; /* Medium button font size */
+            cursor: pointer; /* Indicate clickable */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 5px 0 #222222; /* "Pressed" effect shadow */
+            transition: all 0.1s ease; /* Smooth transition for hover/active states */
+            text-transform: uppercase; /* Uppercase text */
+        }
+
+        /* Hover effect for buttons */
+        .game-button:hover {
+            background-color: #4A4A4A; /* Slightly lighter dark grey on hover */
+            box-shadow: 0 7px 0 #222222; /* Larger shadow on hover */
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+
+        /* Active (clicked) effect for buttons */
+        .game-button:active {
+            background-color: #222222; /* Darker dark grey when clicked */
+            box-shadow: 0 2px 0 #111111; /* Smaller shadow to simulate press */
+            transform: translateY(3px); /* Move down to simulate press */
+        }
+
+        /* Disabled state for buttons */
+        .game-button:disabled {
+            background-color: #aaa; /* Lighter grey when disabled */
+            border-color: #777; /* Darker border */
+            color: #ccc; /* Lighter grey text */
+            cursor: not-allowed; /* Indicate not clickable */
+            box-shadow: none; /* Remove shadow */
+            transform: none; /* Remove any transform */
+        }
+
+        /* Styling for the footer */
+        footer {
+            margin-top: auto; /* Pushes the footer to the very bottom */
+            padding-top: 20px; /* Padding above the footer */
+            font-size: 0.9em; /* Smaller font size */
+            color: #666; /* Darker grey color */
+        }
+
+        /* Media queries for responsiveness on smaller screens */
+        @media (max-width: 600px) {
+            .game-title {
+                font-size: 2.2em;
+            }
+            .instruction-message {
+                font-size: 0.9em;
+            }
+            .timer-display {
+                font-size: 2.5em; /* Adjust timer font size */
+            }
+            .message-display {
+                font-size: 1.4em; /* Adjust message font size */
+            }
+            .game-button {
+                font-size: 1em; /* Adjust button font size */
+                padding: 12px 20px; /* Adjust button padding */
+            }
+        }
+
+        @media (max-width: 400px) {
+            .game-title {
+                font-size: 1.8em;
+            }
+            .instruction-message {
+                font-size: 0.8em;
+            }
+            .timer-display {
+                font-size: 2em; /* Further adjust timer font size */
+            }
+            .message-display {
+                font-size: 1.2em; /* Further adjust message font size */
+            }
+            .game-button {
+                font-size: 0.9em; /* Further adjust button font size */
+                padding: 10px 15px; /* Further adjust button padding */
+            }
+            .game-container {
+                padding: 20px; /* Adjust container padding */
+                width: 100%; /* Make container full width */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="game-title">Stop It</h1>
+    <p class="instruction-message">Stop the timer exactly at 05:00</p>
+    <div class="game-container">
+        <div class="timer-display" id="timerDisplay">00:00.000</div>
+        <div class="message-display" id="messageDisplay"></div>
+        <button class="game-button" id="toggleButton">START</button>
+    </div>
+    <footer>
+        © 2025 suryab0002. All rights reserved.
+    </footer>
+
+    <script>
+        // Get references to DOM elements
+        const timerDisplay = document.getElementById('timerDisplay');
+        const messageDisplay = document.getElementById('messageDisplay');
+        const toggleButton = document.getElementById('toggleButton');
+
+        // Variables to manage the game state
+        let timerInterval; // Stores the ID of the setInterval for timer updates
+        let autoStopTimeout; // Stores the ID of the setTimeout for the 10-second auto-stop
+        let startTime; // Stores the Date.now() timestamp when the timer starts
+        let isRunning = false; // Flag to indicate if the timer is currently running
+
+        // Game constants
+        const TARGET_TIME_MS_START_RANGE = 4990; // Start of the "That's some reflex!" range (4.99 seconds)
+        const TARGET_TIME_MS_END_RANGE = 5050;   // End of the "That's some reflex!" range (5.05 seconds)
+        const AUTO_STOP_TIME_MS = 10000; // The time at which the timer automatically stops: 10 seconds
+
+        /**
+         * Formats a given number of milliseconds into a MM:SS.ms string with three decimal places.
+         * @param {number} ms - The time in milliseconds.
+         * @returns {string} The formatted time string (e.g., "00:05.000").
+         */
+        function formatTime(ms) {
+            // Calculate total seconds, minutes, and seconds
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            // Get raw milliseconds (0-999)
+            const milliseconds = Math.floor(ms % 1000);
+
+            // Helper function to pad numbers with leading zeros
+            const pad = (num, length = 2) => num.toString().padStart(length, '0');
+
+            // Return the formatted string with three decimal places for milliseconds
+            return `${pad(minutes)}:${pad(seconds)}.${pad(milliseconds, 3)}`;
+        }
+
+        /**
+         * Displays a message in the designated message area.
+         * @param {string} message - The message string to display.
+         * @param {string} color - The CSS color string for the message.
+         */
+        function displayMessage(message, color = '#cc0000') { /* Default to red for errors/late/too soon */
+            messageDisplay.textContent = message;
+            messageDisplay.style.color = color;
+        }
+
+        /**
+         * Updates the timer display every 10 milliseconds.
+         * This function is called by setInterval.
+         */
+        function updateTimer() {
+            const currentTime = Date.now(); // Get current timestamp
+            const elapsedTime = currentTime - startTime; // Calculate elapsed time
+            timerDisplay.textContent = formatTime(elapsedTime); // Update display with formatted time
+        }
+
+        /**
+         * Starts the game timer.
+         * Initializes variables, resets display, and sets up intervals/timeouts.
+         */
+        function startTimer() {
+            isRunning = true; // Set running flag
+            clearInterval(timerInterval); // Clear any existing timer interval
+            clearTimeout(autoStopTimeout); // Clear any existing auto-stop timeout
+
+            timerDisplay.textContent = "00:00.000"; // Reset timer display
+            messageDisplay.textContent = ""; // Clear any previous message
+            messageDisplay.style.color = '#cc0000'; // Reset message color to default
+
+            toggleButton.textContent = "STOP"; // Change button text to STOP
+            toggleButton.disabled = false; // Ensure button is enabled
+
+            startTime = Date.now(); // Record the start time
+            // Start updating the timer every 10 milliseconds for precision
+            timerInterval = setInterval(updateTimer, 10);
+
+            // Set a timeout to automatically stop the timer after 10 seconds
+            autoStopTimeout = setTimeout(() => {
+                stopTimer(true); // Call stopTimer with 'true' to indicate auto-stop
+            }, AUTO_STOP_TIME_MS);
+        }
+
+        /**
+         * Stops the game timer and evaluates the user's performance.
+         * @param {boolean} autoStopped - True if the timer was stopped automatically (at 10 seconds).
+         */
+        function stopTimer(autoStopped = false) {
+            isRunning = false; // Set running flag to false
+            clearInterval(timerInterval); // Stop the timer updates
+            clearTimeout(autoStopTimeout); // Clear the auto-stop timeout
+
+            toggleButton.textContent = "START"; // Change button text back to START
+            toggleButton.disabled = false; // Ensure button is enabled
+
+            const finalTime = Date.now() - startTime; // Calculate the final elapsed time
+            timerDisplay.textContent = formatTime(finalTime); // Display the exact time the user stopped
+
+            // Evaluate the result based on finalTime
+            if (autoStopped) {
+                // If the timer auto-stopped at 10 seconds
+                displayMessage("TRY AGAIN!", '#cc9900'); // Orange color for "Try again"
+            } else if (finalTime >= TARGET_TIME_MS_START_RANGE && finalTime <= TARGET_TIME_MS_END_RANGE) {
+                // If within the allowed tolerance of 4.99 to 5.05 seconds
+                displayMessage("THAT'S SOME REFLEX!", '#009900'); // Green for success
+            } else if (finalTime > TARGET_TIME_MS_END_RANGE) {
+                // If stopped after 5.05 seconds
+                displayMessage("LATE!", '#cc0000'); // Red for late
+            } else { // finalTime < TARGET_TIME_MS_START_RANGE
+                // If stopped before 4.99 seconds
+                displayMessage("TOO SOON!", '#cc0000'); // Red for too soon
+            }
+        }
+
+        // Add a single event listener to the toggle button
+        toggleButton.addEventListener('click', () => {
+            if (isRunning) {
+                stopTimer(false); // User clicked to stop
+            } else {
+                startTimer(); // User clicked to start
+            }
+        });
+    </script>
+</body>
+</html>
 
