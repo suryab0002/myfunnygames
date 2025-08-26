@@ -1,1 +1,611 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skeet Shooter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles for the body to ensure full screen and correct font */
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #1a202c; /* Dark background for retro feel */
+            color: #e2e8f0; /* Light text for contrast */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Ensure full viewport height */
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrollbars from appearing */
+        }
+        /* Container for centering game elements */
+        .container {
+            flex-grow: 1; /* Allows container to take available space */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            position: relative; /* Needed for absolute positioning of overlays */
+        }
+        /* Styling for the game canvas */
+        canvas {
+            background-color: #4a5568; /* Greyish blue for canvas background */
+            border: 4px solid #a0aec0; /* Border for canvas */
+            border-radius: 0.5rem; /* Rounded corners for retro-modern look */
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); /* Neon glow effect */
+            display: block;
+            touch-action: manipulation; /* Improves touch responsiveness on mobile */
+            max-width: 90vw; /* Responsive width, 90% of viewport width */
+            max-height: 70vh; /* Responsive height, 70% of viewport height */
+            margin-bottom: 1rem;
+            /* Using min-width/height to ensure canvas is not too small on tiny screens */
+            min-width: 300px; 
+            min-height: 200px;
+            cursor: none; /* Hide default cursor to use custom crosshair/dot */
+            position: relative; /* Allow children overlays to be positioned relative to canvas */
+        }
+        /* Styling for the score and timer display */
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px; /* Match max-width of canvas for alignment */
+            margin-bottom: 1rem;
+            padding: 0 1rem; /* Padding for mobile */
+            box-sizing: border-box; /* Include padding in width */
+        }
+        #score-display, #timer-display {
+            font-size: 1.5rem;
+            text-shadow: 0 0 5px #0ff, 0 0 10px #0ff; /* Neon text shadow */
+        }
+        /* Styling for the footer */
+        footer {
+            width: 100%;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.875rem;
+            color: #a0aec0; /* Slightly muted color for footer text */
+            text-shadow: 0 0 3px #0ff; /* Subtle neon text shadow */
+        }
+        /* Base overlay styles for full-screen effects */
+        .overlay {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+            color: #e2e8f0;
+            font-size: 3rem;
+            text-shadow: 0 0 10px #0ff;
+            z-index: 10; /* Ensure overlay is on top */
+            border-radius: 0.5rem; /* Match canvas border radius */
+            /* Centering for the larger overlays */
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            padding: 2rem; /* Add some padding for content */
+            box-sizing: border-box; /* Include padding in width/height */
+            max-width: 90%; /* Responsive width */
+            max-height: 90%; /* Responsive height */
+            border: 3px solid #e2e8f0; /* White border for the boxes */
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.7); /* White glow */
+        }
+        .overlay.hidden {
+            display: none;
+        }
+        .overlay-text {
+            margin-bottom: 1rem;
+            font-size: 3rem; /* Larger font for main text */
+            text-align: center; /* Center text within its box */
+        }
+        .small-text {
+            font-size: 1.5rem; /* Smaller font for secondary text */
+            text-align: center;
+        }
+        /* Button styling */
+        .game-button {
+            background-color: #00bfff; /* Deep Sky Blue */
+            color: #1a202c;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1.25rem;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            margin-top: 1rem;
+        }
+        .game-button:hover {
+            background-color: #008cba; /* Slightly darker on hover */
+            transform: scale(1.05);
+        }
+        .game-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Specific styles for Start Screen and Game Over */
+        #start-screen-overlay, #game-over-overlay {
+            min-width: 300px; /* Minimum width to ensure readability */
+            min-height: 200px; /* Minimum height */
+            background-color: rgba(0, 0, 0, 0.9); /* Slightly darker background */
+        }
+
+
+        /* Countdown specific styles - smaller and centered */
+        #countdown-overlay {
+            background-color: #607d8b; /* Greyish blue for countdown */
+            width: 200px; /* Fixed width for countdown box */
+            height: 150px; /* Fixed height for countdown box */
+            /* Centering already handled by .overlay, just override max-width/height */
+            max-width: 200px;
+            max-height: 150px;
+        }
+        #countdown-text {
+            font-size: 4rem; /* Larger font for the countdown numbers */
+        }
+
+        /* Media queries for responsiveness on smaller screens */
+        @media (max-width: 768px) {
+            #score-display, #timer-display {
+                font-size: 1.2rem;
+            }
+            footer {
+                font-size: 0.75rem;
+            }
+            .overlay-text {
+                font-size: 2rem;
+            }
+            .small-text {
+                font-size: 1rem;
+            }
+            .game-button {
+                font-size: 1rem;
+                padding: 0.5rem 1rem;
+            }
+            #countdown-overlay {
+                width: 150px;
+                height: 120px;
+                max-width: 150px;
+                max-height: 120px;
+            }
+            #countdown-text {
+                font-size: 3rem;
+            }
+            #start-screen-overlay, #game-over-overlay {
+                min-width: 280px;
+                min-height: 180px;
+                padding: 1rem; /* Adjust padding for smaller screens */
+            }
+            /* Adjust padding for the general overlay on smaller screens */
+            .overlay {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container">
+        <!-- Game title -->
+        <h1 class="text-3xl md:text-5xl font-bold mb-4 text-center text-teal-300 drop-shadow-lg">SKEET SHOOTER</h1>
+        
+        <!-- Game Info: Score and Timer -->
+        <div class="game-info">
+            <div id="score-display" class="font-bold">Score: 0</div>
+            <div id="timer-display" class="font-bold">Time: 60</div>
+        </div>
+
+        <!-- Game canvas where the action happens -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Start Screen Overlay (visible initially) -->
+        <div id="start-screen-overlay" class="overlay">
+            <div class="overlay-text">Welcome to Skeet Shooter!</div>
+            <button id="start-game-button" class="game-button">START GAME</button>
+        </div>
+
+        <!-- Countdown Overlay (hidden initially, appears small and centered) -->
+        <div id="countdown-overlay" class="overlay hidden">
+            <div id="countdown-text" class="overlay-text">3</div>
+        </div>
+
+        <!-- Game Over Overlay (hidden initially) -->
+        <div id="game-over-overlay" class="overlay hidden">
+            <div class="overlay-text">GAME OVER!</div>
+            <div id="final-score" class="small-text">Final Score: 0</div>
+            <button id="play-again-button" class="game-button">PLAY AGAIN</button>
+        </div>
+    </div>
+    <!-- Footer with copyright information -->
+    <footer class="text-gray-400">
+        © 2025 suryab0002. All rights reserved.
+    </footer>
+
+    <script>
+        // Get references to the canvas and display elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const startScreenOverlay = document.getElementById('start-screen-overlay');
+        const startGameButton = document.getElementById('start-game-button');
+        const countdownOverlay = document.getElementById('countdown-overlay');
+        const countdownText = document.getElementById('countdown-text');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const playAgainButton = document.getElementById('play-again-button');
+
+        // Game state variables
+        let score = 0;
+        let skeets = [];
+        const SKEET_COUNT = 5; // Number of skeets on screen
+        const SKEET_SIZE = 50; // All skeets are now a fixed size of 30 pixels (changed from 50 for better scaling)
+        
+        const SKEET_MIN_SPEED = 1.5; // Minimum speed of a skeet (slightly faster for better visibility)
+        const SKEET_MAX_SPEED = 3.5; // Maximum speed of a skeet (slightly faster)
+        
+        // --- Physics Adjustment for Red Dot Hit Detection ---
+        const DOT_SIZE = 8; // Global constant for the red dot's diameter
+        const SKEET_HIT_BUFFER = DOT_SIZE / 2; // Red dot's radius for precise hit detection
+
+        // Crosshair position variables for smooth movement
+        let targetCrosshairX = -100; // Where the mouse actually is
+        let targetCrosshairY = -100;
+        let currentCrosshairX = -100; // Where the crosshair is currently drawn
+        let currentCrosshairY = -100;
+        // Adjusted dampening factor for less smoothing, making it more "normal"
+        const CROSSHAIR_DAMPENING_FACTOR = 1.0; 
+
+        // Game timing variables
+        let gameTimer; // Will hold the setInterval for the game timer
+        let timeLeft = 60; // Initial game time in seconds
+        let gameActive = false; // Flag to indicate if the game is actively running
+
+        // Flag to track if it's the very first attempt (for showing welcome screen)
+        let isFirstGameAttempt = true;
+
+        // Game states
+        const GAME_STATE_START_SCREEN = 'startScreen';
+        const GAME_STATE_COUNTDOWN = 'countdown';
+        const GAME_STATE_PLAYING = 'playing';
+        const GAME_STATE_GAME_OVER = 'gameOver';
+        let currentGameState = GAME_STATE_START_SCREEN; // Initial game state is the start screen
+
+        /**
+         * Resizes the canvas based on window dimensions.
+         * Ensures canvas is responsive and adjusts skeet positions if they go out of bounds.
+         */
+        function resizeCanvas() {
+            canvas.width = window.innerWidth * 0.8; // Set canvas width to 80% of window width
+            canvas.height = window.innerHeight * 0.6; // Set canvas height to 60% of window height
+
+            // Apply max and min dimensions to keep the game playable and visually appealing
+            if (canvas.width > 800) canvas.width = 800;
+            if (canvas.height > 600) canvas.height = 600;
+            if (canvas.height < 300) canvas.height = 300;
+            if (canvas.width < 400) canvas.width = 400;
+
+            // Re-initialize or respawn skeets if they are outside the new canvas boundaries
+            skeets.forEach(skeet => {
+                if (skeet.x < 0 || skeet.x > canvas.width || skeet.y < 0 || skeet.y > canvas.height) {
+                    respawnSkeet(skeet);
+                }
+            });
+        }
+
+        /**
+         * Represents a single skeet in the game.
+         * Initializes its size, position, speed, and color.
+         */
+        function Skeet() {
+            this.size = SKEET_SIZE; // Fixed size for all skeets
+            // Ensure skeet spawns within vertical bounds, considering its size
+            this.y = Math.random() * (canvas.height - this.size * 2) + this.size; 
+            this.speed = Math.random() * (SKEET_MAX_SPEED - SKEET_MIN_SPEED) + SKEET_MIN_SPEED;
+            this.color = '#FF4500'; // All skeets are now orange
+
+            // Randomly determine if the skeet starts from the left or right side
+            if (Math.random() < 0.5) {
+                // Start with its right edge exactly at the left canvas edge (center at radius)
+                this.x = this.size / 2; 
+                this.dx = this.speed; // Move right
+            } else {
+                // Start with its left edge exactly at the right canvas edge (center at canvas.width - radius)
+                this.x = canvas.width - this.size / 2; 
+                this.dx = -this.speed; // Move left
+            }
+
+            // Add vertical speed for random movement
+            this.dy = (Math.random() * (this.speed / 2) - (this.speed / 4)); // Random vertical speed
+        }
+
+        /**
+         * Initializes the array of skeets for the start of the game.
+         */
+        function initSkeets() {
+            skeets = []; // Clear any existing skeets
+            for (let i = 0; i < SKEET_COUNT; i++) {
+                skeets.push(new Skeet()); // Create and add new skeets
+            }
+        }
+
+        /**
+         * Draws a single skeet on the canvas.
+         * @param {Skeet} skeet - The skeet object to draw.
+         */
+        function drawSkeet(skeet) {
+            ctx.beginPath();
+            ctx.arc(skeet.x, skeet.y, skeet.size / 2, 0, Math.PI * 2); // Draw as a circle
+            ctx.fillStyle = skeet.color;
+            ctx.shadowColor = skeet.color; // Set shadow color to match skeet color for a glow
+            ctx.shadowBlur = 10; // Apply a blur to create the glow effect
+            ctx.fill();
+            ctx.closePath();
+            ctx.shadowBlur = 0; // Reset shadow blur to prevent affecting other drawings
+        }
+
+        /**
+         * Updates the positions of all skeets.
+         * If a skeet moves off-screen, it is respawned.
+         */
+        function updateSkeets() {
+            for (let i = 0; i < skeets.length; i++) {
+                let skeet = skeets[i];
+                skeet.x += skeet.dx; // Move skeet horizontally
+                skeet.y += skeet.dy; // Move skeet vertically
+
+                // Reverse vertical direction if hitting top or bottom edges
+                if (skeet.y - skeet.size / 2 < 0 || skeet.y + skeet.size / 2 > canvas.height) {
+                    skeet.dy *= -1;
+                }
+
+                // Check if skeet has moved completely off-screen horizontally
+                // Use >= and <= to ensure the entire skeet body has left the canvas
+                if (skeet.dx > 0 && skeet.x - skeet.size / 2 >= canvas.width) { 
+                    respawnSkeet(skeet); // Respawn if moved off right edge
+                } else if (skeet.dx < 0 && skeet.x + skeet.size / 2 <= 0) { 
+                    respawnSkeet(skeet); // Respawn if moved off left edge
+                }
+            }
+        }
+
+        /**
+         * Respawns a specific skeet with new random properties.
+         * @param {Skeet} skeet - The skeet object to respawn.
+         */
+        function respawnSkeet(skeet) {
+            skeet.size = SKEET_SIZE; // Fixed size for all skeets
+            skeet.y = Math.random() * (canvas.height - skeet.size * 2) + skeet.size;
+            skeet.speed = Math.random() * (SKEET_MAX_SPEED - SKEET_MIN_SPEED) + SKEET_MIN_SPEED;
+            skeet.color = '#FF4500'; // All skeets are now orange
+
+            // Randomly decide new starting side and direction
+            if (Math.random() < 0.5) {
+                // Start with its right edge at the left canvas edge
+                skeet.x = skeet.size / 2; 
+                skeet.dx = skeet.speed; // Move right
+            } else {
+                // Start with its left edge at the right canvas edge
+                skeet.x = canvas.width - skeet.size / 2; 
+                skeet.dx = -skeet.speed; // Move left
+            }
+            // Re-randomize vertical speed on respawn
+            skeet.dy = (Math.random() * (skeet.speed / 2) - (skeet.speed / 4));
+        }
+
+        /**
+         * Draws a custom red dot pointer encompassed in a white circle at the mouse position.
+         */
+        function drawCrosshair() {
+            if (currentGameState !== GAME_STATE_PLAYING) return; // Only draw pointer when playing
+
+            const outerCircleSize = 20; // Diameter of the white circle
+            const outerCircleColor = '#FFFFFF'; // White
+            const dotSize = DOT_SIZE; // Use the global DOT_SIZE constant
+            const dotColor = '#FF0000'; // Red color for the dot
+
+            // Draw white outer circle
+            ctx.beginPath();
+            ctx.arc(currentCrosshairX, currentCrosshairY, outerCircleSize / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = outerCircleColor;
+            ctx.lineWidth = 1.5; // Thickness of the white circle
+            ctx.stroke();
+            ctx.closePath();
+
+            // Draw red inner dot
+            ctx.beginPath();
+            ctx.arc(currentCrosshairX, currentCrosshairY, dotSize / 2, 0, Math.PI * 2); // Draw a filled circle
+            ctx.fillStyle = dotColor;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        /**
+         * Handles game over logic.
+         */
+        function endGame() {
+            gameActive = false;
+            currentGameState = GAME_STATE_GAME_OVER;
+            clearInterval(gameTimer); // Stop the game timer
+
+            // Display game over screen and final score
+            gameOverOverlay.classList.remove('hidden');
+            finalScoreDisplay.textContent = `Final Score: ${score}`;
+        }
+
+        /**
+         * Starts the game timer.
+         */
+        function startTimer() {
+            timeLeft = 60; // Reset time
+            timerDisplay.textContent = `Time: ${timeLeft}`;
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Time: ${timeLeft}`;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        /**
+         * Starts the countdown before the game begins.
+         */
+        function startCountdown() {
+            currentGameState = GAME_STATE_COUNTDOWN;
+            startScreenOverlay.classList.add('hidden'); // Hide the start screen
+            gameOverOverlay.classList.add('hidden'); // Ensure game over is hidden
+            countdownOverlay.classList.remove('hidden'); // Show the countdown overlay
+
+            let count = 3;
+            countdownText.textContent = count;
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownText.textContent = count;
+                } else if (count === 0) {
+                    countdownText.textContent = 'GO!';
+                } else {
+                    clearInterval(countdownInterval);
+                    countdownOverlay.classList.add('hidden');
+                    startGame(); // Start the game after countdown
+                }
+            }, 1000);
+        }
+
+        /**
+         * Initializes and starts the actual game play.
+         */
+        function startGame() {
+            currentGameState = GAME_STATE_PLAYING;
+            gameActive = true;
+            score = 0; // Reset score
+            scoreDisplay.textContent = `Score: ${score}`;
+            initSkeets(); // Initialize skeets for the new game
+            startTimer(); // Start the game timer
+            
+            // Set initial pointer position to the center of the canvas
+            targetCrosshairX = canvas.width / 2; // Set target to center
+            targetCrosshairY = canvas.height / 2;
+            currentCrosshairX = canvas.width / 2; // Immediately snap current to center for first frame
+            currentCrosshairY = canvas.height / 2;
+        }
+
+        /**
+         * Resets the game to its initial state (before countdown).
+         */
+        function resetGame() {
+            score = 0;
+            timeLeft = 60;
+            scoreDisplay.textContent = `Score: ${score}`;
+            timerDisplay.textContent = `Time: ${timeLeft}`;
+            clearInterval(gameTimer); // Clear any running timer
+            gameActive = false;
+            gameOverOverlay.classList.add('hidden'); // Hide game over screen
+            isFirstGameAttempt = false; // Mark that it's no longer the first attempt
+            startCountdown(); // Directly start countdown
+        }
+
+        /**
+         * Event listener for clicks on the canvas.
+         * Detects if a skeet was clicked and handles hit logic.
+         * @param {MouseEvent} event - The click event object.
+         */
+        canvas.addEventListener('click', (event) => {
+            if (currentGameState !== GAME_STATE_PLAYING) return; // Only process clicks when playing
+
+            // Get the bounding rectangle of the canvas to calculate accurate click coordinates
+            const rect = canvas.getBoundingClientRect();
+            // Use currentCrosshairX/Y for click detection, as that's where the visual pointer is
+            const mouseX = currentCrosshairX; 
+            const mouseY = currentCrosshairY;
+
+            for (let i = 0; i < skeets.length; i++) {
+                let skeet = skeets[i];
+                // Calculate distance from the center of the red dot (mouseX, mouseY)
+                // to the center of the skeet (skeet.x, skeet.y).
+                const distance = Math.sqrt(
+                    (mouseX - skeet.x) * (mouseX - skeet.x) +
+                    (mouseY - skeet.y) * (mouseY - skeet.y)
+                );
+
+                // A hit is registered if the distance between the center of the skeet
+                // and the center of the red dot is less than the sum of their radii.
+                if (distance < (skeet.size / 2) + SKEET_HIT_BUFFER) {
+                    // Skeet hit!
+                    score++; // Increment score
+                    scoreDisplay.textContent = `Score: ${score}`; // Update score display
+                    respawnSkeet(skeet); // Respawn the hit skeet
+                    break; // Exit loop after hitting one skeet per click
+                }
+            }
+        });
+
+        /**
+         * Event listener to track mouse movement for the custom red dot pointer.
+         * Updates the target position for the smooth crosshair.
+         * @param {MouseEvent} event - The mouse move event object.
+         */
+        canvas.addEventListener('mousemove', (event) => {
+            if (currentGameState !== GAME_STATE_PLAYING) {
+                // Keep target pointer off-screen if not playing
+                targetCrosshairX = -100;
+                targetCrosshairY = -100;
+                return;
+            }
+            const rect = canvas.getBoundingClientRect();
+            targetCrosshairX = event.clientX - rect.left;
+            targetCrosshairY = event.clientY - rect.top;
+        });
+
+        // Event listener for the "Start Game" button
+        startGameButton.addEventListener('click', startCountdown);
+        // Event listener for the "Play Again" button
+        playAgainButton.addEventListener('click', resetGame);
+
+        /**
+         * The main game loop.
+         * Clears the canvas, updates game elements, and draws them.
+         * Uses requestAnimationFrame for smooth animations.
+         */
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
+
+            if (currentGameState === GAME_STATE_PLAYING) {
+                updateSkeets(); // Update skeet positions
+                skeets.forEach(drawSkeet); // Draw all skeets
+
+                // Smoothly move the crosshair towards the target mouse position
+                currentCrosshairX += (targetCrosshairX - currentCrosshairX) * CROSSHAIR_DAMPENING_FACTOR;
+                currentCrosshairY += (targetCrosshairY - currentCrosshairY) * CROSSHAIR_DAMPENING_FACTOR;
+                drawCrosshair(); // Draw the custom red dot pointer
+            } 
+            // The grey background for countdown is handled by the CSS overlay (#countdown-overlay),
+            // no direct canvas drawing needed here for that state.
+            // For GAME_STATE_START_SCREEN and GAME_STATE_GAME_OVER, the overlays handle display.
+
+            requestAnimationFrame(gameLoop); // Request the next frame
+        }
+
+        // Initialize the game when the window has fully loaded
+        window.onload = function () {
+            resizeCanvas(); // Set initial canvas size
+            gameLoop(); // Start the game loop (which continuously renders based on game state)
+            
+            if (isFirstGameAttempt) {
+                startScreenOverlay.classList.remove('hidden');
+            } else {
+                startCountdown(); // Directly start countdown if not first attempt
+            }
+            countdownOverlay.classList.add('hidden');
+            gameOverOverlay.classList.add('hidden');
+        };
+
+        // Add an event listener to resize the canvas when the window is resized
+        window.addEventListener('resize', resizeCanvas);
+    </script>
+</body>
+</html>
 
