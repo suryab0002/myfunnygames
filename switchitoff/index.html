@@ -1,1 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Switch It Off - Reaction Challenge</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Press Start 2P font for retro look -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to enforce the retro pixelated look */
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #1a202c; /* Dark background */
+        }
+        .retro-text {
+            /* Ensures medium size as requested */
+            font-size: 1.1rem; 
+        }
+        .retro-box {
+            border: 4px solid #fff;
+            box-shadow: 8px 8px 0px 0px #000;
+        }
+        .bulb {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            transition: background-color 0.1s;
+        }
+        .shadow-yellow {
+            box-shadow: 0 0 40px 10px rgba(255, 255, 0, 0.7);
+        }
+        /* Custom button styling for retro feel */
+        .retro-button {
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
+            transition: all 0.05s;
+        }
+        .retro-button:active {
+            box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.5);
+            transform: translate(3px, 3px);
+        }
+        /* Centered on smaller screens */
+        @media (max-width: 640px) {
+            .game-container {
+                flex-direction: column;
+            }
+            .bulb-area, .results-area {
+                width: 100%;
+                margin-bottom: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col justify-between p-4">
+
+    <!-- Header and Rules Button (Added mt-8 and sm:mt-10 for vertical offset) -->
+    <div class="text-center mb-6 mt-8 sm:mt-10">
+        <h1 class="text-4xl sm:text-5xl font-bold mb-4 text-yellow-400">SWITCH IT OFF</h1>
+        <button id="rulesButton" class="retro-button bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg retro-text text-xs">
+            RULES
+        </button>
+    </div>
+
+    <!-- Main Game Container -->
+    <div class="game-container flex flex-grow items-center justify-center sm:space-x-8 max-w-5xl mx-auto w-full">
+
+        <!-- Light Bulb & Controls Area -->
+        <div id="bulb-area" class="w-full sm:w-1/2 flex flex-col items-center justify-center p-6 bg-gray-900 rounded-xl retro-box h-80">
+            
+            <!-- Light Bulb -->
+            <div id="lightBulb" class="bulb bg-gray-600 mb-8"></div>
+
+            <!-- Start/Off Buttons -->
+            <button id="startButton" class="retro-button bg-green-500 hover:bg-green-600 text-gray-900 py-3 px-6 rounded-lg retro-text">
+                START
+            </button>
+            <button id="offButton" class="retro-button bg-red-600 hover:bg-red-700 text-white py-4 px-10 rounded-lg retro-text hidden">
+                SWITCH OFF
+            </button>
+
+            <!-- Status Message/False Start -->
+            <p id="statusMessage" class="text-center mt-4 text-sm retro-text h-4"></p>
+        </div>
+
+        <!-- Results Table -->
+        <div id="resultsArea" class="w-full sm:w-1/2 p-6 bg-gray-900 rounded-xl retro-box h-80 flex flex-col">
+            <h2 class="text-xl sm:text-2xl font-bold mb-4 text-yellow-400 text-center">RESULTS (<span id="currentChance">0</span>/5)</h2>
+            <div class="overflow-y-auto flex-grow">
+                <table class="w-full text-left text-sm retro-text">
+                    <thead>
+                        <tr class="bg-gray-700">
+                            <th class="py-2 px-4">#</th>
+                            <th class="py-2 px-4 text-right">Time (ms)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <!-- Reaction times will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Modal Overlay (New Element) -->
+    <div id="rulesModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="w-full max-w-lg p-6 bg-gray-900 rounded-xl retro-box text-left">
+            <h2 class="text-2xl font-bold mb-4 text-yellow-400 text-center">HOW TO PLAY</h2>
+            <ol class="list-decimal list-inside space-y-2 retro-text text-sm text-gray-200 pl-4">
+                <li>Click on START to begin the challenge.</li>
+                <li>The yellow light might switch on randomly.</li>
+                <li>Click the SWITCH OFF button or press the SPACE BAR key to turn the light off.</li>
+                <li>The light might turn on again at any moment, be ready to switch off!</li>
+                <li>Complete 5 chances to see your average reaction time.</li>
+                <li>Pressing too soon (before the light turns yellow) will reset your results.</li>
+            </ol>
+            <div class="text-center mt-6">
+                <button id="closeRulesButton" class="retro-button bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-lg retro-text">
+                    CLOSE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over / Average Time Display -->
+    <div id="gameOverArea" class="hidden fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center z-50">
+        <div class="p-8 bg-gray-800 retro-box text-center">
+            <h2 class="text-3xl font-bold mb-4 text-yellow-400">GAME OVER!</h2>
+            <p class="text-xl mb-6 retro-text">Your Average Reaction Time is:</p>
+            <p id="averageTimeDisplay" class="text-6xl font-extrabold text-green-500 mb-8">0 ms</p>
+            <!-- This button only has a mouse-click listener -->
+            <button id="playAgainButton" class="retro-button bg-green-500 hover:bg-green-600 text-gray-900 py-3 px-6 rounded-lg retro-text">
+                PLAY AGAIN
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center mt-6 text-xs text-gray-500">
+        © 2025 suryab0002. All rights reserved.
+    </footer>
+
+    <script>
+        // --- Game Variables ---
+        const MAX_CHANCES = 5;
+        let chances = 0;
+        let reactionTimes = [];
+        let lightTimer = null;
+        let startTime = null;
+        let isLightOn = false;
+
+        // --- DOM Elements ---
+        const lightBulb = document.getElementById('lightBulb');
+        const startButton = document.getElementById('startButton');
+        const offButton = document.getElementById('offButton');
+        const resultsBody = document.getElementById('resultsBody');
+        const currentChanceDisplay = document.getElementById('currentChance');
+        const statusMessage = document.getElementById('statusMessage');
+        const gameOverArea = document.getElementById('gameOverArea');
+        const averageTimeDisplay = document.getElementById('averageTimeDisplay');
+        const playAgainButton = document.getElementById('playAgainButton');
+        
+        // NEW Modal Elements
+        const rulesButton = document.getElementById('rulesButton');
+        const rulesModal = document.getElementById('rulesModal');
+        const closeRulesButton = document.getElementById('closeRulesButton');
+
+        // --- Helper Functions ---
+
+        /**
+         * Converts milliseconds to a clean string format.
+         * @param {number} ms 
+         * @returns {string}
+         */
+        const formatTime = (ms) => `${ms.toFixed(0)} ms`;
+
+        /**
+         * Resets the game state and UI for a new round.
+         */
+        const resetGame = () => {
+            clearTimeout(lightTimer);
+            chances = 0;
+            reactionTimes = [];
+            isLightOn = false;
+            startTime = null;
+            
+            // UI Reset
+            lightBulb.classList.remove('bg-yellow-400', 'shadow-yellow');
+            lightBulb.classList.add('bg-gray-600');
+            offButton.classList.add('hidden');
+            startButton.classList.remove('hidden');
+            gameOverArea.classList.add('hidden');
+            resultsBody.innerHTML = '';
+            currentChanceDisplay.textContent = '0';
+            statusMessage.textContent = ''; // Clear message for a clean start
+            closeRules(); // Ensure rules modal is closed on game reset
+        };
+
+        /**
+         * Starts the random delay before the light turns on.
+         */
+        const startWaiting = () => {
+            if (chances >= MAX_CHANCES) {
+                endGame();
+                return;
+            }
+
+            // Light OFF state
+            lightBulb.classList.remove('bg-yellow-400', 'shadow-yellow');
+            lightBulb.classList.add('bg-gray-600');
+            isLightOn = false;
+            statusMessage.textContent = '...Waiting for light...';
+
+            // Random delay between 1000ms (1s) and 4000ms (4s)
+            const randomDelay = Math.random() * 3000 + 1000;
+            
+            lightTimer = setTimeout(lightOn, randomDelay);
+        };
+
+        /**
+         * Turns the light on and starts the timer.
+         */
+        const lightOn = () => {
+            statusMessage.textContent = 'NOW!';
+            lightBulb.classList.remove('bg-gray-600');
+            lightBulb.classList.add('bg-yellow-400', 'shadow-yellow');
+            isLightOn = true;
+            startTime = Date.now();
+        };
+
+        /**
+         * Handles the "SWITCH OFF" button press or Spacebar press.
+         */
+        const handleSwitchOff = () => {
+            if (!isLightOn) {
+                // Too Soon/False Start: Reset the entire game state immediately
+                
+                // 1. Stop the pending light-on timer
+                clearTimeout(lightTimer);
+
+                // 2. Visually indicate the error (red flash)
+                lightBulb.classList.remove('bg-gray-600');
+                lightBulb.classList.add('bg-red-600');
+                
+                // 3. Temporarily show the "TOO SOON!" message
+                statusMessage.textContent = 'TOO SOON!';
+                
+                // 4. After a visual cue, reset the game fully and prompt to start again
+                setTimeout(() => {
+                    resetGame(); 
+                    // Set the message immediately after reset
+                    statusMessage.textContent = 'TOO SOON! Press START to try again.';
+                }, 750); 
+                
+                return;
+            }
+
+            // Successful Reaction
+            const reactionTime = Date.now() - startTime;
+            reactionTimes.push(reactionTime);
+            chances++;
+
+            // Update UI
+            updateResultsTable(reactionTime);
+            statusMessage.textContent = `Time: ${formatTime(reactionTime)}`;
+            currentChanceDisplay.textContent = chances;
+
+            // Prepare for next round
+            clearTimeout(lightTimer);
+            startWaiting();
+        };
+
+        /**
+         * Updates the table with the latest reaction time.
+         * @param {number} time The reaction time in milliseconds.
+         */
+        const updateResultsTable = (time) => {
+            const row = resultsBody.insertRow(0); // Insert at top
+            row.classList.add('border-b', 'border-gray-700', 'hover:bg-gray-800');
+            
+            const cell1 = row.insertCell(0);
+            cell1.textContent = chances;
+            cell1.classList.add('py-2', 'px-4', 'text-yellow-300');
+
+            const cell2 = row.insertCell(1);
+            cell2.textContent = formatTime(time);
+            cell2.classList.add('py-2', 'px-4', 'text-right', 'text-green-400');
+        };
+
+        /**
+         * Ends the game, calculates average, and displays the result screen.
+         */
+        const endGame = () => {
+            // NEW: Hide the in-game control buttons immediately when the game ends
+            offButton.classList.add('hidden');
+            startButton.classList.remove('hidden');
+            statusMessage.textContent = 'Game Over. View Results.';
+
+            const totalTime = reactionTimes.reduce((acc, time) => acc + time, 0);
+            const averageTime = totalTime / MAX_CHANCES;
+            
+            // Display results in overlay
+            averageTimeDisplay.textContent = formatTime(averageTime);
+            gameOverArea.classList.remove('hidden');
+
+            // Log final state (optional, for debugging)
+            console.log('Game Over. Average Time:', averageTime);
+        };
+        
+        // --- Modal Functions ---
+        const openRules = () => {
+            rulesModal.classList.remove('hidden');
+        };
+
+        const closeRules = () => {
+            rulesModal.classList.add('hidden');
+        };
+
+
+        // --- Event Listeners ---
+
+        startButton.addEventListener('click', () => {
+            startButton.classList.add('hidden');
+            offButton.classList.remove('hidden');
+            startWaiting();
+        });
+
+        // Mouse click for switch off
+        offButton.addEventListener('click', handleSwitchOff);
+        
+        // Play Again Button (Mouse-click only)
+        playAgainButton.addEventListener('click', resetGame);
+        
+        // Rules Button Listeners
+        rulesButton.addEventListener('click', openRules);
+        closeRulesButton.addEventListener('click', closeRules);
+
+        // Spacebar listener for switch off (ONLY active during gameplay)
+        window.addEventListener('keydown', (e) => {
+            // The condition now relies only on the visibility of the OFF button 
+            // and the modals to decide if the Spacebar is allowed.
+            if (e.key === ' ' && 
+                !offButton.classList.contains('hidden') && 
+                rulesModal.classList.contains('hidden')) {
+                
+                e.preventDefault(); // Prevents the page from scrolling
+                handleSwitchOff();
+            }
+        });
+
+        // Initial setup
+        window.onload = resetGame;
+
+    </script>
+</body>
+</html>
 
