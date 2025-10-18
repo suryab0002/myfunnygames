@@ -3,51 +3,75 @@
   <meta charset="UTF-8">
   <title>My Funny Games</title>
   <style>
-    body {
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden; /* Prevent scrolling */
       font-family: monospace;
-      padding: 40px;
       background: #f7f7f7;
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
+
     h1 {
+      margin-top: 60px;
       margin-bottom: 40px;
     }
+
+    .game-links {
+      display: grid;
+      grid-template-columns: repeat(4, 200px);
+      gap: 25px;
+      justify-content: center;
+      align-items: start;
+    }
+
     a {
       display: inline-block;
-      margin: 20px;
       padding: 15px 30px;
       background: black;
       color: white;
       text-decoration: none;
       border-radius: 10px;
       font-size: 18px;
+      text-align: center;
+      transition: 0.2s;
     }
+
     a:hover {
       background: darkgray;
+      transform: scale(1.05);
     }
+
     footer {
       position: fixed;
-      bottom: 5px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 20px;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 15px;
       color: #555;
       user-select: none;
       pointer-events: none;
       font-family: 'Press Start 2P', monospace;
     }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
   <h1>🎮 My Funny Games</h1>
-  <a href="/myfunnygames/bestlap/">Best Lap</a>
-  <a href="/myfunnygames/targets/">Targets</a>
-  <a href="/myfunnygames/clickmeter/">Click Meter</a>
-  <a href="/myfunnygames/stopit/">Stop It</a>
-  <a href="/myfunnygames/skeet/">Skeet Shooter</a>
+
+  <div class="game-links">
+    <a href="/myfunnygames/bestlap/">Best Lap</a>
+    <a href="/myfunnygames/targets/">Targets</a>
+    <a href="/myfunnygames/clickmeter/">Click Meter</a>
+    <a href="/myfunnygames/stopit/">Stop It</a>
+    <a href="/myfunnygames/skeet/">Skeet Shooter</a>
+    <a href="/myfunnygames/switchitoff/">Switch It Off</a>
+  </div>
+
   <footer>
     © 2025 suryab0002. All rights reserved.
   </footer> 
 </body>
 </html>
-
